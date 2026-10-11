@@ -1,6 +1,6 @@
 # My Family Tree
 
-Build your family tree together with your relatives.
+Your family's story, passed on for generations.
 
 ## Features
 

@@ -48,8 +48,8 @@ function Landing() {
       <section className="landing-hero">
         <div className="landing-copy">
           <p className="eyebrow">Family tree</p>
-          <h1>Your family, every branch, in one place</h1>
-          <p className="lead">Build your family tree together with relatives, wherever they live. Add people, link them as parents, spouses and children, and see your whole family at a glance.</p>
+          <h1>Your family&apos;s story, passed on for generations.</h1>
+          <p className="lead">Write down every name and every branch of your family, with help from relatives wherever they live, so your children and grandchildren always know where they come from.</p>
           <GoogleButton label="Get started with Google" />
           <p className="fine">Your tree is private to the people you invite.</p>
         </div>
