@@ -1,15 +1,15 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth, NotConfigured, SignInCard, TopBar } from "@/components/AuthProvider";
 import { TreeCanvas } from "@/components/TreeCanvas";
-import { DataPanel, FamiliesPanel, HistoryPanel, PersonDetails, PersonEditor, SharePanel, type Ctx, type Draft } from "@/components/Panels";
+import { DataPanel, FamiliesPanel, HistoryPanel, PersonDetails, PersonEditor, SettingsPanel, SharePanel, type Ctx, type Draft } from "@/components/Panels";
 import { firebaseConfigured } from "@/lib/firebase";
-import { renameTree, subscribeTree } from "@/lib/data";
+import { applyChanges, privacyMigrationChanges, renameTree, subscribeTree } from "@/lib/data";
 import { spouseOf } from "@/lib/family";
 import type { Families, HistoryEntry, Member, People, Tree } from "@/lib/types";
 
-type Mode = { kind: "view" } | { kind: "edit"; id: string | null; draft?: Draft } | { kind: "families" } | { kind: "history" } | { kind: "share" } | { kind: "data" };
+type Mode = { kind: "view" } | { kind: "edit"; id: string | null; draft?: Draft } | { kind: "families" } | { kind: "history" } | { kind: "share" } | { kind: "data" } | { kind: "settings" };
 
 function TreeApp() {
   const treeId = useSearchParams().get("id") || "";
@@ -25,14 +25,29 @@ function TreeApp() {
   const [denied, setDenied] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState("");
+  const [raw, setRaw] = useState<People>({});
+  const migrated = useRef(false);
 
   useEffect(() => {
     if (!user || !treeId) return;
     return subscribeTree(treeId, {
-      tree: setTree, people: setPeople, families: setFamilies, history: setHistory, members: setMembers,
+      tree: setTree, people: (merged, r) => { setPeople(merged); setRaw(r); }, families: setFamilies, history: setHistory, members: setMembers,
       error: (e: any) => { if (e?.code === "permission-denied") setDenied(true); else setStatus("Live updates stopped. Reload the page."); },
     });
   }, [user, treeId]);
+
+  // One-time protection for private people saved before names were stored separately.
+  useEffect(() => {
+    if (!user || !tree || migrated.current) return;
+    const myRole = members.find((m) => m.uid === user.uid)?.role;
+    if (myRole !== "owner" && myRole !== "editor") return;
+    const changes = privacyMigrationChanges(raw);
+    if (!changes.length) return;
+    migrated.current = true;
+    applyChanges(tree.id, user, changes)
+      .then(() => setStatus(`Protected ${changes.length} private name${changes.length === 1 ? "" : "s"} so viewers can't see them.`))
+      .catch(() => { /* rules not updated yet: try again next time the tree opens */ });
+  }, [user, tree, members, raw]);
 
   if (!firebaseConfigured) return <NotConfigured />;
   if (!treeId) return <div className="card"><h2>No tree selected</h2><p className="muted"><a href="/">Go to your trees</a></p></div>;
@@ -70,6 +85,7 @@ function TreeApp() {
       case "history": return <HistoryPanel ctx={ctx} history={history} onClose={() => setMode({ kind: "view" })} />;
       case "share": return <SharePanel ctx={ctx} members={members} onClose={() => setMode({ kind: "view" })} />;
       case "data": return <DataPanel ctx={ctx} onClose={() => setMode({ kind: "view" })} />;
+      case "settings": return <SettingsPanel ctx={ctx} members={members} onClose={() => setMode({ kind: "view" })} />;
       default:
         if (sel && people[sel]) return <PersonDetails ctx={ctx} id={sel} onEdit={() => setMode({ kind: "edit", id: sel })} onAdd={addRelative} />;
         return (
@@ -102,6 +118,7 @@ function TreeApp() {
           <button type="button" onClick={() => setMode({ kind: "share" })}>Share</button>
           <button type="button" onClick={() => setMode({ kind: "history" })}>Edit history</button>
           <button type="button" onClick={() => setMode({ kind: "data" })}>Import / export</button>
+          {role === "owner" && <button type="button" onClick={() => setMode({ kind: "settings" })}>Settings</button>}
         </div>
       </header>
       <div className="legend">

@@ -212,3 +212,4 @@ button.google:hover:not(:disabled) { border-color: var(--brass); box-shadow: 0 2
 .gen-label { fill: var(--muted); font: 700 10.5px var(--body); letter-spacing: .12em; text-transform: uppercase; }
 .gen-num { fill: var(--leaf); font: 400 26px var(--display); }
 @media (prefers-color-scheme: dark) { .gen-band { fill: color-mix(in srgb, var(--brass) 6%, transparent); } .gen-num { fill: var(--brass-ink); } }
+.offline { background: var(--brass); color: var(--on-brass); font-size: .8rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; }

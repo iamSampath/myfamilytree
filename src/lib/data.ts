@@ -5,12 +5,13 @@
  */
 import {
   collection, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, writeBatch,
-  updateDoc, deleteDoc, setDoc, type Unsubscribe, type WriteBatch,
+  updateDoc, deleteDoc, setDoc, Timestamp, type Unsubscribe, type WriteBatch,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { fb } from "./firebase";
 import type { Families, Family, HistoryEntry, Invite, Member, People, Person, Role, Tree } from "./types";
 import type { TreeFile } from "./portable";
+import { mergeSecrets, splitPrivate } from "./privacy";
 
 const strip = <T extends { id: string }>(o: T) => { const { id, ...r } = o; return r; };
 
@@ -56,7 +57,8 @@ export const renameTree = (treeId: string, name: string) => updateDoc(doc(fb().d
 
 export interface TreeHandlers {
   tree: (t: Tree | null) => void;
-  people: (p: People) => void;
+  /** `people` has protected names merged in (editors only); `raw` is exactly what's stored. */
+  people: (people: People, raw: People) => void;
   families: (f: Families) => void;
   history: (h: HistoryEntry[]) => void;
   members: (m: Member[]) => void;
@@ -65,22 +67,33 @@ export interface TreeHandlers {
 
 export function subscribeTree(treeId: string, h: TreeHandlers): Unsubscribe {
   const { db } = fb();
+  let raw: People = {};
+  let secrets: Record<string, string> = {};
+  const emit = () => h.people(mergeSecrets(raw, secrets), raw);
   const subs: Unsubscribe[] = [
     onSnapshot(doc(db, "trees", treeId), (s) => h.tree(s.exists() ? ({ id: s.id, ...s.data() } as Tree) : null), h.error),
     onSnapshot(collection(db, "trees", treeId, "people"), (s) => {
       const o: People = {};
       s.docs.forEach((d) => (o[d.id] = { id: d.id, ...(d.data() as Omit<Person, "id">) }));
-      h.people(o);
+      raw = o;
+      emit();
     }, h.error),
     onSnapshot(collection(db, "trees", treeId, "families"), (s) => {
       const o: Families = {};
       s.docs.forEach((d) => (o[d.id] = { id: d.id, ...(d.data() as Omit<Family, "id">) }));
       h.families(o);
     }, h.error),
-    onSnapshot(query(collection(db, "trees", treeId, "history"), orderBy("ts", "desc"), limit(50)), (s) =>
-      h.history(s.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<HistoryEntry, "id">) }))), h.error),
     onSnapshot(collection(db, "trees", treeId, "members"), (s) =>
       h.members(s.docs.map((d) => d.data() as Member)), h.error),
+    // Owners and editors only. Viewers are refused, which is expected: they get no names and no history.
+    onSnapshot(collection(db, "trees", treeId, "secrets"), (s) => {
+      const o: Record<string, string> = {};
+      s.docs.forEach((d) => (o[d.id] = String(d.data().name ?? "")));
+      secrets = o;
+      emit();
+    }, () => { secrets = {}; emit(); }),
+    onSnapshot(query(collection(db, "trees", treeId, "history"), orderBy("ts", "desc"), limit(50)), (s) =>
+      h.history(s.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<HistoryEntry, "id">) }))), () => h.history([])),
   ];
   return () => subs.forEach((u) => u());
 }
@@ -98,20 +111,29 @@ export interface Change {
 function addChange(b: WriteBatch, treeId: string, user: User, c: Change, ts: number) {
   const { db } = fb();
   const ref = doc(db, "trees", treeId, c.coll, c.id);
-  if (c.after) b.set(ref, c.after); else b.delete(ref);
+  if (c.coll === "people") {
+    // Private people: the name goes only to the editors-only `secrets` collection.
+    const secretRef = doc(db, "trees", treeId, "secrets", c.id);
+    if (!c.after) { b.delete(ref); b.delete(secretRef); }
+    else {
+      const { pub, secretName } = splitPrivate(c.after);
+      b.set(ref, pub);
+      if (secretName !== null) b.set(secretRef, { name: secretName }); else b.delete(secretRef);
+    }
+  } else if (c.after) b.set(ref, c.after); else b.delete(ref);
   b.set(doc(collection(db, "trees", treeId, "history")), {
     ts, coll: c.coll, docId: c.id, before: c.before, after: c.after, label: c.label.slice(0, 300),
     by: user.uid, byName: who(user).name,
   });
 }
 
-/** Apply several changes atomically (Firestore batches hold up to 500 writes; each change uses 2). */
+/** Apply several changes atomically (Firestore batches hold up to 500 writes; each change uses up to 3). */
 export async function applyChanges(treeId: string, user: User, changes: Change[]) {
   const { db } = fb();
   const ts = Date.now();
-  for (let i = 0; i < changes.length; i += 200) {
+  for (let i = 0; i < changes.length; i += 150) {
     const b = writeBatch(db);
-    changes.slice(i, i + 200).forEach((c, j) => addChange(b, treeId, user, c, ts + i + j));
+    changes.slice(i, i + 150).forEach((c, j) => addChange(b, treeId, user, c, ts + i + j));
     await b.commit();
   }
 }
@@ -177,24 +199,39 @@ export function importChanges(file: TreeFile, people: People, families: Families
 export const undoChange = (treeId: string, user: User, h: HistoryEntry, current: Record<string, unknown> | null) =>
   applyChanges(treeId, user, [{ coll: h.coll, id: h.docId, before: current, after: h.before, label: `Undid: ${h.label}` }]);
 
+/** Rewrite private people saved before name protection existed, so their names leave the shared document. */
+export function privacyMigrationChanges(raw: People): Change[] {
+  return Object.values(raw).filter((p) => p.private && p.name !== "").map((p) => ({
+    coll: "people" as const, id: p.id, before: personDoc(p), after: personDoc(p), label: "Protected a private name",
+  }));
+}
+
 /* ---------- sharing ---------- */
 
-export async function createInvite(treeId: string, treeName: string, user: User, role: "editor" | "viewer") {
+const toInvite = (id: string, d: Record<string, any>): Invite => ({
+  id, treeName: d.treeName, role: d.role, createdBy: d.createdBy, createdAt: d.createdAt, revoked: d.revoked,
+  expiresAt: d.expiresAt instanceof Timestamp ? d.expiresAt.toMillis() : undefined,
+});
+
+export async function createInvite(treeId: string, treeName: string, user: User, role: "editor" | "viewer", days: number) {
   const id = randomId("inv_", 24);
-  await setDoc(doc(fb().db, "trees", treeId, "invites", id), { treeName, role, createdBy: user.uid, createdAt: Date.now(), revoked: false });
+  await setDoc(doc(fb().db, "trees", treeId, "invites", id), {
+    treeName, role, createdBy: user.uid, createdAt: Date.now(), revoked: false,
+    expiresAt: Timestamp.fromMillis(Date.now() + days * 86_400_000),
+  });
   return id;
 }
 
 export async function listInvites(treeId: string): Promise<Invite[]> {
   const s = await getDocs(collection(fb().db, "trees", treeId, "invites"));
-  return s.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Invite, "id">) })).sort((a, b) => b.createdAt - a.createdAt);
+  return s.docs.map((d) => toInvite(d.id, d.data())).sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export const revokeInvite = (treeId: string, id: string) => updateDoc(doc(fb().db, "trees", treeId, "invites", id), { revoked: true });
 
 export async function readInvite(treeId: string, id: string): Promise<Invite | null> {
   const s = await getDoc(doc(fb().db, "trees", treeId, "invites", id));
-  return s.exists() ? ({ id: s.id, ...(s.data() as Omit<Invite, "id">) }) : null;
+  return s.exists() ? toInvite(s.id, s.data()) : null;
 }
 
 /** Returns the role the user now holds. Already-members keep their current role. */
@@ -219,3 +256,39 @@ export async function acceptInvite(user: User, treeId: string, invite: Invite): 
 export const setMemberRole = (treeId: string, uid: string, role: "editor" | "viewer") =>
   updateDoc(doc(fb().db, "trees", treeId, "members", uid), { role });
 export const removeMember = (treeId: string, uid: string) => deleteDoc(doc(fb().db, "trees", treeId, "members", uid));
+
+/* ---------- ownership ---------- */
+
+/** Hand the tree to another member. They become owner; you become an editor. */
+export async function transferOwnership(treeId: string, me: string, newOwner: string) {
+  const { db } = fb();
+  const b = writeBatch(db);
+  b.update(doc(db, "trees", treeId), { ownerId: newOwner });
+  b.update(doc(db, "trees", treeId, "members", newOwner), { role: "owner" });
+  b.update(doc(db, "trees", treeId, "members", me), { role: "editor" });
+  await b.commit();
+}
+
+/**
+ * Delete a tree and everything in it. Order matters for the access rules: contents and
+ * other members first (while you're still the owner), then the tree, then your own record.
+ */
+export async function deleteTree(treeId: string, me: string, onProgress?: (msg: string) => void) {
+  const { db } = fb();
+  const wipe = async (sub: string, skip?: string) => {
+    const snap = await getDocs(collection(db, "trees", treeId, sub));
+    const docs = snap.docs.filter((d) => d.id !== skip);
+    for (let i = 0; i < docs.length; i += 400) {
+      const b = writeBatch(db);
+      docs.slice(i, i + 400).forEach((d) => b.delete(d.ref));
+      await b.commit();
+    }
+  };
+  for (const sub of ["people", "secrets", "families", "history", "invites"]) { onProgress?.(`Removing ${sub}…`); await wipe(sub); }
+  onProgress?.("Removing members…");
+  await wipe("members", me);
+  onProgress?.("Removing the tree…");
+  await deleteDoc(doc(db, "trees", treeId));
+  await deleteDoc(doc(db, "trees", treeId, "members", me));
+  await deleteDoc(doc(db, "users", me, "trees", treeId));
+}

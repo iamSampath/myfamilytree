@@ -47,6 +47,8 @@ export interface Invite {
   createdBy: string;
   createdAt: number;
   revoked: boolean;
+  /** Milliseconds since epoch; undefined for links made before expiry existed. */
+  expiresAt?: number;
 }
 
 export interface HistoryEntry {

@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth";
-import { fb, firebaseConfigured } from "@/lib/firebase";
+import { clearLocalData, fb, firebaseConfigured } from "@/lib/firebase";
 
 interface AuthState { user: User | null; loading: boolean; signIn: () => Promise<void>; signOutUser: () => Promise<void> }
 const Ctx = createContext<AuthState>({ user: null, loading: true, signIn: async () => {}, signOutUser: async () => {} });
@@ -15,7 +15,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return onAuthStateChanged(fb().auth, (u) => { setUser(u); setLoading(false); });
   }, []);
   const signIn = async () => { await signInWithPopup(fb().auth, new GoogleAuthProvider()); };
-  const signOutUser = async () => { await signOut(fb().auth); };
+  // Sign out, wipe the local copy of family data, and reload to a clean state.
+  const signOutUser = async () => { await signOut(fb().auth); await clearLocalData(); window.location.href = "/"; };
   return <Ctx.Provider value={{ user, loading, signIn, signOutUser }}>{children}</Ctx.Provider>;
 }
 
@@ -77,6 +78,7 @@ export function TopBar() {
           </svg>
           My Family Tree
         </a>
+        <OfflineNote />
         {user && (
           <div className="who">
             <span>{user.displayName || user.email}</span>
@@ -87,3 +89,17 @@ export function TopBar() {
     </header>
   );
 }
+
+/** Small note in the app bar when the device loses its connection. */
+function OfflineNote() {
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const up = () => setOnline(true), down = () => setOnline(false);
+    setOnline(navigator.onLine);
+    window.addEventListener("online", up); window.addEventListener("offline", down);
+    return () => { window.removeEventListener("online", up); window.removeEventListener("offline", down); };
+  }, []);
+  if (online) return null;
+  return <span className="offline" role="status">Offline: changes will save when you&apos;re back online</span>;
+}
+
