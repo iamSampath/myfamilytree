@@ -11,3 +11,4 @@ next-env.d.ts
 # Real family data stays out of the repo; only the fictional example is committed.
 data/*.json
 !data/example-family.json
+.env.production
