@@ -99,6 +99,13 @@ export function TreeCanvas({ people, families, canEdit, selected, onSelect }: Pr
       <div className={`canvas${dragging ? " dragging" : ""}`} ref={box}
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerLeave={endDrag} onWheel={onWheel}>
         <svg className="tree" viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width * zoom} height={layout.height * zoom} role="img" aria-label="Family tree">
+          {layout.rows.map((r, i) => (
+            <g key={r.gen} className="gen-row">
+              {i % 2 === 0 && <rect className="gen-band" x={0} y={r.y - CARD_H / 2 - 18} width={layout.width} height={CARD_H + 36} />}
+              <text className="gen-label" x={18} y={r.y - 4}>Generation</text>
+              <text className="gen-num" x={18} y={r.y + 22}>{r.gen}</text>
+            </g>
+          ))}
           {layout.edges.map((e, i) => (
             <path key={i} className="edge" d={"M" + e.points.map((p) => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" L")} />
           ))}

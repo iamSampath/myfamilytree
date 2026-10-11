@@ -9,6 +9,7 @@ import {
   birthGothramOf, childrenOf, displayName, gothramOf, gothramText, maidenLabel, makeId, spouseOf, validatePerson,
 } from "@/lib/family";
 import { exportTree, parseTreeFile } from "@/lib/portable";
+import { computeGenerations } from "@/lib/layout";
 import type { Families, HistoryEntry, Invite, Member, People, Person, Role, Tree } from "@/lib/types";
 
 export interface Ctx {
@@ -44,6 +45,7 @@ export function PersonDetails({ ctx, id, onEdit, onAdd }: { ctx: Ctx; id: string
         <div><h2>{displayName(p, canEdit)}</h2>{!hidden && nee && <p className="muted">{nee}</p>}</div>
       </div>
       <dl>
+        <dt>Generation</dt><dd>Generation {computeGenerations(people)[id]}</dd>
         <dt>Gothram</dt><dd className={g ? "goth" : "muted"}>{gothramText(g)}</dd>
         {bg !== null && <><dt>Birth gothram</dt><dd className={bg ? "goth" : "muted"}>{gothramText(bg)}</dd></>}
         <dt>Birth family</dt><dd>{families[p.family]?.surname ?? <span className="muted">Not set</span>}</dd>

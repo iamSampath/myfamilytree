@@ -206,3 +206,9 @@ button.google:hover:not(:disabled) { border-color: var(--brass); box-shadow: 0 2
 .tile-open { font-size: .85rem; font-weight: 600; color: var(--leaf); margin-top: 4px; }
 @media (prefers-color-scheme: dark) { .tile-open { color: var(--brass-ink); } }
 @media (prefers-color-scheme: dark) { .feature { border-top-color: var(--brass); } }
+
+/* generation rows */
+.gen-band { fill: color-mix(in srgb, var(--leaf) 5%, transparent); }
+.gen-label { fill: var(--muted); font: 700 10.5px var(--body); letter-spacing: .12em; text-transform: uppercase; }
+.gen-num { fill: var(--leaf); font: 400 26px var(--display); }
+@media (prefers-color-scheme: dark) { .gen-band { fill: color-mix(in srgb, var(--brass) 6%, transparent); } .gen-num { fill: var(--brass-ink); } }

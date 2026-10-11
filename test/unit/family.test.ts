@@ -3,7 +3,7 @@ import example from "../../data/example-family.json";
 import {
   birthGothramOf, childrenOf, displayName, gothramOf, maidenLabel, makeId, spouseOf, validatePerson,
 } from "@/lib/family";
-import { layoutTree, wrapName, unionKey } from "@/lib/layout";
+import { computeGenerations, layoutTree, wrapName, unionKey, CARD_W } from "@/lib/layout";
 import { exportTree, parseTreeFile } from "@/lib/portable";
 import type { Families, People, Person } from "@/lib/types";
 
@@ -98,3 +98,35 @@ describe("import/export", () => {
     expect(parseTreeFile("not json").ok).toBe(false);
   });
 });
+
+describe("generations and spouse placement", () => {
+  it("numbers generations from the oldest, spouses share a row", () => {
+    const g = computeGenerations(people);
+    expect(g.ravi).toBe(1);
+    expect(g.lata).toBe(1);
+    expect(g.anil).toBe(2);
+  });
+  it("a married-in spouse takes their partner's generation", () => {
+    const ppl: People = { ...people,
+      anil: { ...P("anil"), spouseId: "meena" },
+      meena: { id: "meena", name: "Meena Rao", sex: "F", family: "", fatherId: "", motherId: "", spouseId: "anil", private: false },
+    };
+    expect(computeGenerations(ppl).meena).toBe(2);
+    const l = layoutTree(ppl);
+    const n = (id: string) => l.nodes.find((x) => x.id === id)!;
+    expect(n("meena").y).toBe(n("anil").y);
+  });
+  it("puts spouses right next to each other, husband on the left", () => {
+    const l = layoutTree(people);
+    const n = (id: string) => l.nodes.find((x) => x.id === id)!;
+    expect(n("ravi").y).toBe(n("lata").y);
+    expect(n("lata").x - n("ravi").x).toBe(CARD_W + 36);
+    const dot = n(unionKey("ravi", "lata"));
+    expect(dot.x).toBeGreaterThan(n("ravi").x);
+    expect(dot.x).toBeLessThan(n("lata").x);
+  });
+  it("labels one row per generation", () => {
+    expect(layoutTree(people).rows.map((r) => r.gen)).toEqual([1, 2]);
+  });
+});
+
