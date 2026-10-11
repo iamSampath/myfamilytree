@@ -237,6 +237,16 @@ export async function readInvite(treeId: string, id: string): Promise<Invite | n
   return s.exists() ? toInvite(s.id, s.data()) : null;
 }
 
+/** The signed-in user's current role in a tree, or null if they aren't a member. */
+export async function myRole(user: User, treeId: string): Promise<Role | null> {
+  try {
+    const m = await getDoc(doc(fb().db, "trees", treeId, "members", user.uid));
+    return m.exists() ? (m.data().role as Role) : null;
+  } catch {
+    return null; // not a member: reading is refused
+  }
+}
+
 /** Returns the role the user now holds. Already-members keep their current role. */
 export async function acceptInvite(user: User, treeId: string, invite: Invite): Promise<Role> {
   const { db } = fb();
