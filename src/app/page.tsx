@@ -84,10 +84,12 @@ function Landing() {
 function VerifyBanner() {
   const { user } = useAuth();
   const [sent, setSent] = useState("");
-  const resend = () => user && sendEmailVerification(user).then(() => setSent("Sent. Check your inbox and spam folder.")).catch(() => setSent("Couldn't send right now. Try again in a few minutes."));
+  const resend = () => user && sendEmailVerification(user)
+    .then(() => setSent("Sent. It can take a few minutes; check your spam or junk folder too."))
+    .catch((e) => setSent(e?.code === "auth/too-many-requests" ? "Already sent recently. Wait a few minutes before asking again." : "Couldn't send right now. Try again in a few minutes."));
   return (
     <div className="notice row" style={{ justifyContent: "space-between" }}>
-      <span>Please confirm your email address ({user?.email}) using the link we sent you.</span>
+      <span>Please confirm your email address ({user?.email}) using the link we sent you. Can&apos;t find it? Check spam or junk.</span>
       {sent ? <span>{sent}</span> : <button type="button" onClick={resend}>Resend email</button>}
     </div>
   );

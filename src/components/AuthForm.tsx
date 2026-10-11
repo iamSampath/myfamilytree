@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile,
@@ -19,9 +19,12 @@ export function AuthForm({ mode }: { mode: "signup" | "signin" }) {
   const [errors, setErrors] = useState<string[]>([]);
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
+  // While a new account is being set up (name + verification email), don't leave the page yet:
+  // leaving early cancels the verification email.
+  const finishing = useRef(false);
 
   // Once signed in (by any method), continue to where they were going.
-  useEffect(() => { if (!loading && user) window.location.href = next; }, [user, loading, next]);
+  useEffect(() => { if (!loading && user && !finishing.current) window.location.href = next; }, [user, loading, next]);
 
   const other = mode === "signup" ? "/signin" : "/signup";
   const otherHref = `${other}${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`;
@@ -37,15 +40,23 @@ export function AuthForm({ mode }: { mode: "signup" | "signin" }) {
     try {
       const { auth } = fb();
       if (mode === "signup") {
+        finishing.current = true;
         const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
         await updateProfile(cred.user, { displayName: name.trim().slice(0, 120) });
         await cred.user.reload();
-        sendEmailVerification(cred.user).catch(() => { /* can resend from the home page */ });
+        try {
+          await sendEmailVerification(cred.user);
+        } catch {
+          // The account exists; they can resend the email from the home page.
+        }
+        window.location.href = next;
+        return;
       } else {
         await signInWithEmailAndPassword(auth, email.trim(), password);
       }
       // The effect above redirects once the sign-in is registered.
     } catch (err: any) {
+      finishing.current = false;
       const msg = authErrorMessage(err?.code, mode);
       if (msg) setErrors([msg]);
       setBusy(false);
