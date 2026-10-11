@@ -1,0 +1,14 @@
+{
+  "format": "myfamilytree/v1",
+  "name": "Example Family (fictional)",
+  "families": [
+    { "id": "rao", "surname": "Rao", "gothram": "Kashyapa" },
+    { "id": "reddy", "surname": "Reddy", "gothram": "Bharadvaja" }
+  ],
+  "people": [
+    { "id": "ravi", "name": "Ravi Rao", "sex": "M", "family": "rao", "fatherId": "", "motherId": "", "spouseId": "lata", "private": false },
+    { "id": "lata", "name": "Lata Rao", "sex": "F", "family": "reddy", "fatherId": "", "motherId": "", "spouseId": "ravi", "private": false },
+    { "id": "anil", "name": "Anil Rao", "sex": "M", "family": "rao", "fatherId": "ravi", "motherId": "lata", "spouseId": "", "private": false },
+    { "id": "kavya", "name": "Kavya Rao", "sex": "F", "family": "rao", "fatherId": "ravi", "motherId": "lata", "spouseId": "", "private": true }
+  ]
+}
