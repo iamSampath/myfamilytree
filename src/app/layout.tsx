@@ -12,7 +12,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <footer className="site-footer">
+            <p>© {new Date().getFullYear()} My Family Tree. All rights reserved.</p>
+          </footer>
+        </AuthProvider>
       </body>
     </html>
   );

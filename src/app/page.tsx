@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useAuth, GoogleButton, NotConfigured, TopBar } from "@/components/AuthProvider";
+import { useAuth, NotConfigured, TopBar } from "@/components/AuthProvider";
+import { sendEmailVerification } from "firebase/auth";
 import { firebaseConfigured } from "@/lib/firebase";
 import { createTree, listMyTrees } from "@/lib/data";
 import type { Role, Tree } from "@/lib/types";
@@ -37,7 +38,7 @@ const features = [
 ];
 
 const steps = [
-  { t: "Sign in with Google", d: "No new password needed." },
+  { t: "Create an account", d: "Sign up with your email, or with Google in one tap." },
   { t: "Create your tree", d: "Add yourself, then your parents, spouse and children." },
   { t: "Invite your family", d: "Send a link so relatives can add their side of the family." },
 ];
@@ -50,8 +51,11 @@ function Landing() {
           <p className="eyebrow">Family tree</p>
           <h1>Your family&apos;s story, passed on for generations.</h1>
           <p className="lead">Chart every name and every branch of your family, with help from relatives wherever they live, so your children and grandchildren always know where they come from.</p>
-          <GoogleButton label="Get started with Google" />
-          <p className="fine">Your tree is private to the people you invite.</p>
+          <div className="row hero-cta">
+            <a href="/signup"><button className="primary big" type="button">Create an account</button></a>
+            <a href="/signin"><button className="big" type="button">Sign in</button></a>
+          </div>
+          <p className="fine">Already have an account from before? Use Sign in, then the same method you used last time (Google or email).</p>
         </div>
         <div className="landing-art"><HeroTree /></div>
       </section>
@@ -74,6 +78,18 @@ function Landing() {
         </ol>
       </section>
     </>
+  );
+}
+
+function VerifyBanner() {
+  const { user } = useAuth();
+  const [sent, setSent] = useState("");
+  const resend = () => user && sendEmailVerification(user).then(() => setSent("Sent. Check your inbox and spam folder.")).catch(() => setSent("Couldn't send right now. Try again in a few minutes."));
+  return (
+    <div className="notice row" style={{ justifyContent: "space-between" }}>
+      <span>Please confirm your email address ({user?.email}) using the link we sent you.</span>
+      {sent ? <span>{sent}</span> : <button type="button" onClick={resend}>Resend email</button>}
+    </div>
   );
 }
 
@@ -109,6 +125,7 @@ function MyTrees() {
         <p className="eyebrow">Welcome back</p>
         <h1>{first ? `Hello, ${first}` : "Your family trees"}</h1>
       </header>
+      {user && !user.emailVerified && user.providerData.some((p) => p.providerId === "password") && <VerifyBanner />}
       <section className="stack">
         <h3>Your trees</h3>
         {trees === null ? <p className="muted">Loading your trees…</p> : trees.length === 0 ? (

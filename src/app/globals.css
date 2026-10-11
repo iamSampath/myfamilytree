@@ -213,3 +213,22 @@ button.google:hover:not(:disabled) { border-color: var(--brass); box-shadow: 0 2
 .gen-num { fill: var(--leaf); font: 400 26px var(--display); }
 @media (prefers-color-scheme: dark) { .gen-band { fill: color-mix(in srgb, var(--brass) 6%, transparent); } .gen-num { fill: var(--brass-ink); } }
 .offline { background: var(--brass); color: var(--on-brass); font-size: .8rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+
+/* sign-up / sign-in */
+.auth-wrap { max-width: 460px; padding-block: 36px 56px; }
+.auth-card { gap: 18px; padding: 26px; }
+.auth-card h1 { font-size: clamp(1.6rem, 5vw, 2rem); }
+.auth-card .google { width: 100%; }
+.divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: .82rem; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
+.pw { position: relative; display: block; }
+.pw input { padding-right: 64px; }
+.pw button { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: .85rem; }
+button.wide { width: 100%; min-height: 46px; font-size: .98rem; }
+.switch { text-align: center; font-size: .92rem; }
+button.big { min-height: 48px; padding: 12px 22px; font-size: 1rem; border-radius: 999px; }
+.hero-cta { gap: 10px; }
+.appbar button.solid { background: var(--brass); color: var(--on-brass); border-color: var(--brass); }
+
+/* footer */
+.site-footer { max-width: 1600px; margin: 0 auto; padding: 18px 16px calc(22px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--hair); color: var(--muted); font-size: .82rem; text-align: center; }

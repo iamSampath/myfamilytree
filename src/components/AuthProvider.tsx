@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth";
 import { clearLocalData, fb, firebaseConfigured } from "@/lib/firebase";
+import { authErrorMessage } from "@/lib/authHelpers";
 
 interface AuthState { user: User | null; loading: boolean; signIn: () => Promise<void>; signOutUser: () => Promise<void> }
 const Ctx = createContext<AuthState>({ user: null, loading: true, signIn: async () => {}, signOutUser: async () => {} });
@@ -37,7 +38,7 @@ export function GoogleButton({ label = "Sign in with Google" }: { label?: string
   const go = () => {
     setBusy(true); setErr("");
     signIn()
-      .catch((e) => setErr(e?.code === "auth/popup-closed-by-user" || e?.code === "auth/cancelled-popup-request" ? "" : "Sign-in didn't complete. Allow pop-ups for this site and try again."))
+      .catch((e) => setErr(authErrorMessage(e?.code, "signin")))
       .finally(() => setBusy(false));
   };
   return (
@@ -56,18 +57,25 @@ export function GoogleButton({ label = "Sign in with Google" }: { label?: string
   );
 }
 
+/** Where to come back to after signing in: the current page. */
+const here = () => (typeof window === "undefined" ? "/" : window.location.pathname + window.location.search);
+
 export function SignInCard({ message }: { message: string }) {
+  const next = encodeURIComponent(here());
   return (
     <div className="card">
-      <h2>Sign in</h2>
+      <h2>Sign in to continue</h2>
       <p className="muted">{message}</p>
-      <div className="row"><GoogleButton /></div>
+      <div className="row">
+        <a href={`/signin?next=${next}`}><button className="primary" type="button">Sign in</button></a>
+        <a href={`/signup?next=${next}`}><button type="button">Create an account</button></a>
+      </div>
     </div>
   );
 }
 
 export function TopBar() {
-  const { user, signOutUser } = useAuth();
+  const { user, loading, signOutUser } = useAuth();
   return (
     <header className="appbar">
       <div className="appbar-in">
@@ -79,6 +87,12 @@ export function TopBar() {
           My Family Tree
         </a>
         <OfflineNote />
+        {!user && !loading && firebaseConfigured && (
+          <div className="who">
+            <a href="/signin"><button type="button">Sign in</button></a>
+            <a href="/signup"><button type="button" className="solid">Sign up</button></a>
+          </div>
+        )}
         {user && (
           <div className="who">
             <span>{user.displayName || user.email}</span>
