@@ -30,16 +30,16 @@ function HeroTree() {
 }
 
 const features = [
-  { t: "Gothrams worked out", d: "Enter each family's gothram once. Children inherit it, and married women take their husband's." },
-  { t: "Build it together", d: "Invite relatives with a link. Editors can add people; Viewers can only look." },
-  { t: "Private where it matters", d: "Hide names of children or anyone else from Viewers. Every change can be undone." },
-  { t: "Phone and laptop", d: "Find anyone by name, zoom around the tree, and add family from wherever you are." },
+  { t: "Automatic gothram", d: "Add a family's gothram once and everyone in that family gets it. A married woman shows her husband's gothram, and her birth gothram is kept too." },
+  { t: "Build it with family", d: "Send relatives an invite link. Editors can add and change people. Viewers can only see the tree." },
+  { t: "Keep names private", d: "Hide a child's name, or anyone's, from Viewers. Every change is saved, so mistakes can be undone." },
+  { t: "Works on any device", d: "Use it on your phone or computer. Search for anyone by name and zoom in on any part of the tree." },
 ];
 
 const steps = [
-  { t: "Sign in with Google", d: "No new password to remember." },
-  { t: "Create your tree", d: "Add yourself, then parents, spouse and children." },
-  { t: "Invite family", d: "Share a link so relatives can fill in their branches." },
+  { t: "Sign in with Google", d: "No new password needed." },
+  { t: "Create your tree", d: "Add yourself, then your parents, spouse and children." },
+  { t: "Invite your family", d: "Send a link so relatives can add their side of the family." },
 ];
 
 function Landing() {
@@ -47,9 +47,9 @@ function Landing() {
     <>
       <section className="landing-hero">
         <div className="landing-copy">
-          <p className="eyebrow">Gothram-aware family trees</p>
+          <p className="eyebrow">Family tree with gothram</p>
           <h1>Your family, every branch, in one place</h1>
-          <p className="lead">Build your family tree together with relatives near and far. The app works out each person&apos;s gothram from their father&apos;s line, so you only enter it once.</p>
+          <p className="lead">Build your family tree together with relatives, wherever they live. Add each family&apos;s gothram once, and the app shows the right gothram for every person.</p>
           <GoogleButton label="Get started with Google" />
           <p className="fine">Your tree is private to the people you invite.</p>
         </div>
