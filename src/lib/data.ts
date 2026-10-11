@@ -114,11 +114,14 @@ function addChange(b: WriteBatch, treeId: string, user: User, c: Change, ts: num
   if (c.coll === "people") {
     // Private people: the name goes only to the editors-only `secrets` collection.
     const secretRef = doc(db, "trees", treeId, "secrets", c.id);
-    if (!c.after) { b.delete(ref); b.delete(secretRef); }
+    // Only touch `secrets` when a private person is involved, so ordinary edits never depend on it.
+    const wasPrivate = c.before?.private === true;
+    if (!c.after) { b.delete(ref); if (wasPrivate) b.delete(secretRef); }
     else {
       const { pub, secretName } = splitPrivate(c.after);
       b.set(ref, pub);
-      if (secretName !== null) b.set(secretRef, { name: secretName }); else b.delete(secretRef);
+      if (secretName !== null) b.set(secretRef, { name: secretName });
+      else if (wasPrivate) b.delete(secretRef);
     }
   } else if (c.after) b.set(ref, c.after); else b.delete(ref);
   b.set(doc(collection(db, "trees", treeId, "history")), {
