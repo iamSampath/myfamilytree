@@ -18,19 +18,19 @@ function HeroTree() {
     </g>
   );
   return (
-    <svg className="hero-tree" viewBox="0 0 360 250" role="img" aria-label="Example family tree: a couple and their two children, each showing their gothram">
+    <svg className="hero-tree" viewBox="0 0 360 250" role="img" aria-label="Example family tree: a couple and their two children">
       <path className="hero-edge" d="M118 50 H242 M180 50 V128 M95 128 H265 M95 128 V170 M265 128 V170" />
       <circle className="hero-dot" cx="180" cy="50" r="7" />
-      {card(78, 50, "M", "Ravi", "Kashyapa")}
-      {card(282, 50, "F", "Lata", "Kashyapa")}
-      {card(95, 200, "M", "Anil", "Kashyapa")}
-      {card(265, 200, "F", "Kavya", "Kashyapa")}
+      {card(78, 50, "M", "Ravi", "Father")}
+      {card(282, 50, "F", "Lata", "Mother")}
+      {card(95, 200, "M", "Anil", "Son")}
+      {card(265, 200, "F", "Kavya", "Daughter")}
     </svg>
   );
 }
 
 const features = [
-  { t: "Automatic gothram", d: "Add a family's gothram once and everyone in that family gets it. A married woman shows her husband's gothram, and her birth gothram is kept too." },
+  { t: "A tree that draws itself", d: "Add parents, spouses and children. The tree arranges itself, so it stays neat as your family grows." },
   { t: "Build it with family", d: "Send relatives an invite link. Editors can add and change people. Viewers can only see the tree." },
   { t: "Keep names private", d: "Hide a child's name, or anyone's, from Viewers. Every change is saved, so mistakes can be undone." },
   { t: "Works on any device", d: "Use it on your phone or computer. Search for anyone by name and zoom in on any part of the tree." },
@@ -47,9 +47,9 @@ function Landing() {
     <>
       <section className="landing-hero">
         <div className="landing-copy">
-          <p className="eyebrow">Family tree with gothram</p>
+          <p className="eyebrow">Family tree</p>
           <h1>Your family, every branch, in one place</h1>
-          <p className="lead">Build your family tree together with relatives, wherever they live. Add each family&apos;s gothram once, and the app shows the right gothram for every person.</p>
+          <p className="lead">Build your family tree together with relatives, wherever they live. Add people, link them as parents, spouses and children, and see your whole family at a glance.</p>
           <GoogleButton label="Get started with Google" />
           <p className="fine">Your tree is private to the people you invite.</p>
         </div>
