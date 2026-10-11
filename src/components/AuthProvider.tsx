@@ -23,7 +23,7 @@ export function NotConfigured() {
   return (
     <div className="card">
       <h2>Firebase isn&apos;t connected yet</h2>
-      <p className="muted">Copy <span className="code">.env.example</span> to <span className="code">.env.local</span>, fill in your Firebase web app settings, and restart. See the README for the steps.</p>
+      <p className="muted">Copy <span className="code">.env.example</span> to <span className="code">.env.local</span>, fill in your Firebase web app settings, and restart.</p>
     </div>
   );
 }

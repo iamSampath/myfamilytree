@@ -19,7 +19,7 @@ let auth: Auth | undefined;
 let db: Firestore | undefined;
 
 export function fb() {
-  if (!firebaseConfigured) throw new Error("Firebase is not configured. See README → Setup.");
+  if (!firebaseConfigured) throw new Error("Firebase is not configured: set the NEXT_PUBLIC_FIREBASE_* environment variables.");
   if (!app) {
     app = getApps()[0] ?? initializeApp(config);
     auth = getAuth(app);
