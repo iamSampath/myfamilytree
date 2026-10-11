@@ -47,6 +47,9 @@ function TreeApp() {
   const canEdit = role === "owner" || role === "editor";
   const ctx: Ctx = { tree, people, families, user, role, canEdit, select: (id) => { setSel(id); setMode({ kind: "view" }); }, say: setStatus };
   const empty = Object.keys(people).length === 0;
+  // On phones the panel is a bottom sheet; it opens only when there's something to show.
+  const sheetOpen = mode.kind !== "view" || (!!sel && !!people[sel]);
+  const closePanel = () => { setMode({ kind: "view" }); setSel(null); };
 
   const addRelative = (kind: "child" | "spouse" | "parent") => {
     const p = sel ? people[sel] : null;
@@ -93,7 +96,7 @@ function TreeApp() {
             <div className="row"><h1>{tree.name}</h1>{role === "owner" && <button type="button" className="link" onClick={() => { setNewName(tree.name); setRenaming(true); }}>Rename</button>}</div>
           )}
         </div>
-        <div className="row">
+        <div className="actions">
           {canEdit && <button className="primary" type="button" onClick={() => setMode({ kind: "edit", id: null })}>Add person</button>}
           <button type="button" onClick={() => setMode({ kind: "families" })}>Families &amp; gothrams</button>
           <button type="button" onClick={() => setMode({ kind: "share" })}>Share</button>
@@ -102,21 +105,25 @@ function TreeApp() {
         </div>
       </header>
       <div className="legend">
-        <span><i className="sw" style={{ background: "var(--m)" }} />Male</span>
-        <span><i className="sw" style={{ background: "var(--f)" }} />Female</span>
-        <span><i className="sw" style={{ background: "var(--line)" }} />Not set</span>
-        <span><i className="sw" style={{ background: "var(--accent)", borderRadius: "50%" }} />Marriage</span>
-        <span><em className="goth">Gold italic</em>&nbsp;gothram: father&apos;s line; married women take their husband&apos;s</span>
+        <span><i className="sw" style={{ background: "var(--m-soft)", borderColor: "var(--m)" }} />Men</span>
+        <span><i className="sw" style={{ background: "var(--f-soft)", borderColor: "var(--f)" }} />Women</span>
+        <span><i className="sw" style={{ background: "var(--u-soft)", borderColor: "var(--u)" }} />Not set</span>
+        <span><i className="sw" style={{ background: "var(--brass)", borderColor: "var(--brass)", borderRadius: "50%" }} />Marriage</span>
+        <span><em className="goth">Brass italic</em>&nbsp;= gothram (married women show their husband&apos;s)</span>
       </div>
       <div className="main">
         {empty ? (
-          <div className="canvas"><div className="empty">
+          <div className="canvas-wrap"><div className="empty">
             <h2>No one in this tree yet</h2>
             <p className="muted">Add the first person, or import a tree file.</p>
             {canEdit && <div className="row"><button className="primary" type="button" onClick={() => setMode({ kind: "edit", id: null })}>Add the first person</button><button type="button" onClick={() => setMode({ kind: "data" })}>Import a file</button></div>}
           </div></div>
         ) : <TreeCanvas people={people} families={families} canEdit={canEdit} selected={sel} onSelect={ctx.select} />}
-        <aside className="card" aria-live="polite">{panel()}</aside>
+        {sheetOpen && <div className="scrim" onClick={closePanel} aria-hidden="true" />}
+        <aside className={`card panel ${sheetOpen ? "open" : "closed"}`} aria-live="polite">
+          <button type="button" className="icon sheet-close" aria-label="Close" onClick={closePanel}>✕</button>
+          {panel()}
+        </aside>
       </div>
       <p className="status">{status}</p>
     </>
@@ -125,9 +132,11 @@ function TreeApp() {
 
 export default function TreePage() {
   return (
-    <main className="wrap">
+    <>
       <TopBar />
+      <main className="wrap">
       <Suspense fallback={<p className="muted">Loading…</p>}><TreeApp /></Suspense>
     </main>
+    </>
   );
 }

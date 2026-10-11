@@ -33,9 +33,10 @@ export default function Home() {
   };
 
   return (
-    <main className="wrap narrow">
+    <>
       <TopBar />
-      <header className="stack">
+      <main className="wrap narrow">
+      <header className="hero">
         <p className="eyebrow">Gothram-aware family trees</p>
         <h1>Build your family tree together</h1>
         <p className="muted">Add relatives, invite family to help, and let the app work out each person&apos;s gothram from their father&apos;s line, including married women, who take their husband&apos;s.</p>
@@ -52,7 +53,7 @@ export default function Home() {
             ) : (
               <div className="tiles">
                 {trees.map((t) => (
-                  <a key={t.id} href={`/tree?id=${t.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                  <a key={t.id} href={`/tree?id=${t.id}`} style={{ textDecoration: "none", color: "inherit" }} className="tile-link">
                     <div className="card tile"><strong>{t.name}</strong><span className="muted">{roleName[t.role]}</span></div>
                   </a>
                 ))}
@@ -70,5 +71,6 @@ export default function Home() {
       )}
       {err && <p className="error">{err}</p>}
     </main>
+    </>
   );
 }

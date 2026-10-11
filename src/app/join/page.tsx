@@ -51,9 +51,11 @@ function Join() {
 
 export default function JoinPage() {
   return (
-    <main className="wrap narrow">
+    <>
       <TopBar />
+      <main className="wrap narrow">
       <Suspense fallback={<p className="muted">Loading…</p>}><Join /></Suspense>
     </main>
+    </>
   );
 }

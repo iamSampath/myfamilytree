@@ -46,14 +46,22 @@ export function SignInCard({ message }: { message: string }) {
 export function TopBar() {
   const { user, signOutUser } = useAuth();
   return (
-    <div className="topbar">
-      <a className="brand" href="/">My Family Tree</a>
-      {user && (
-        <div className="row">
-          <span className="muted">{user.displayName || user.email}</span>
-          <button type="button" onClick={() => signOutUser()}>Sign out</button>
-        </div>
-      )}
-    </div>
+    <header className="appbar">
+      <div className="appbar-in">
+        <a className="brand" href="/">
+          <svg className="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <circle cx="12" cy="4.5" r="2.5" /><circle cx="5" cy="19.5" r="2.5" /><circle cx="19" cy="19.5" r="2.5" /><circle cx="12" cy="19.5" r="2.5" />
+            <path d="M12 7v5M5 17v-2.5h14V17M12 12v5" />
+          </svg>
+          My Family Tree
+        </a>
+        {user && (
+          <div className="who">
+            <span>{user.displayName || user.email}</span>
+            <button type="button" onClick={() => signOutUser()}>Sign out</button>
+          </div>
+        )}
+      </div>
+    </header>
   );
 }

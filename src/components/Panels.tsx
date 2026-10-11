@@ -22,6 +22,8 @@ const errMsg = (e: any) =>
 
 /* ---------------- person details ---------------- */
 
+const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?";
+
 export function PersonDetails({ ctx, id, onEdit, onAdd }: { ctx: Ctx; id: string; onEdit: () => void; onAdd: (kind: "child" | "spouse" | "parent") => void }) {
   const { people, families, canEdit, select } = ctx;
   const p = people[id];
@@ -37,7 +39,10 @@ export function PersonDetails({ ctx, id, onEdit, onAdd }: { ctx: Ctx; id: string
   const hidden = p.private && !canEdit;
   return (
     <>
-      <div><h3>Person</h3><h2>{displayName(p, canEdit)}</h2>{!hidden && nee && <p className="muted">{nee}</p>}</div>
+      <div className="person-head">
+        <span className={`avatar ${p.sex || "U"}`} aria-hidden="true">{initials(displayName(p, canEdit))}</span>
+        <div><h2>{displayName(p, canEdit)}</h2>{!hidden && nee && <p className="muted">{nee}</p>}</div>
+      </div>
       <dl>
         <dt>Gothram</dt><dd className={g ? "goth" : "muted"}>{gothramText(g)}</dd>
         {bg !== null && <><dt>Birth gothram</dt><dd className={bg ? "goth" : "muted"}>{gothramText(bg)}</dd></>}
