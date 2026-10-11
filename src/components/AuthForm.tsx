@@ -45,7 +45,7 @@ export function AuthForm({ mode }: { mode: "signup" | "signin" }) {
         await updateProfile(cred.user, { displayName: name.trim().slice(0, 120) });
         await cred.user.reload();
         try {
-          await sendEmailVerification(cred.user);
+          await sendEmailVerification(cred.user, { url: `${window.location.origin}/` });
         } catch {
           // The account exists; they can resend the email from the home page.
         }
@@ -67,7 +67,7 @@ export function AuthForm({ mode }: { mode: "signup" | "signin" }) {
     setErrors([]); setInfo("");
     if (!email.trim()) { setErrors(["Enter your email above, then tap “Forgot password?” again."]); return; }
     try {
-      await sendPasswordResetEmail(fb().auth, email.trim());
+      await sendPasswordResetEmail(fb().auth, email.trim(), { url: `${window.location.origin}/signin` });
       setInfo(`If ${email.trim()} has an account, a reset link is on its way. Check your inbox and spam folder.`);
     } catch (err: any) {
       setErrors([authErrorMessage(err?.code, "reset")]);

@@ -84,7 +84,7 @@ function Landing() {
 function VerifyBanner() {
   const { user } = useAuth();
   const [sent, setSent] = useState("");
-  const resend = () => user && sendEmailVerification(user)
+  const resend = () => user && sendEmailVerification(user, { url: `${window.location.origin}/` })
     .then(() => setSent("Sent. It can take a few minutes; check your spam or junk folder too."))
     .catch((e) => setSent(e?.code === "auth/too-many-requests" ? "Already sent recently. Wait a few minutes before asking again." : "Couldn't send right now. Try again in a few minutes."));
   return (
